@@ -1,4 +1,4 @@
-const CACHE_NAME = 'isee-2026-cache-v1';
+const CACHE_NAME = 'isee-cache-v1';
 const CORE_ASSETS = [
   './',
   './index.html',
