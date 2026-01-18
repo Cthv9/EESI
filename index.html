@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Documenti ISEE 2026 | By DF</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/x-icon" href="icons/isee_icon.ico">
+  <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192x192.png">
+  <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512x512.png">
+  <link rel="manifest" href="manifest.json">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.0/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f7f9fc;
+      margin: 20px;
+      color: #333;
+    }
+    .section {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 30px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    label, .item {
+      display: block;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+    input[type="file"] {
+      display: block;
+      margin-top: 6px;
+      padding: 12px;
+      border: 2px dashed #ccc;
+      border-radius: 10px;
+      background: #eef4fb;
+      width: 100%;
+      cursor: pointer;
+      text-align: center;
+      font-size: 16px;
+    }
+    input[type="file"]::file-selector-button {
+      padding: 10px 20px;
+      background-color: #3498db;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    input[type="file"]::file-selector-button:hover {
+      background-color: #2980b9;
+    }
+    h1 {
+      font-weight: 600;
+      font-size: 28px;
+      margin-bottom: 10px;
+      color: #2c3e50;
+    }
+    .subtitle{
+      margin-bottom: 20px;
+      color:#556;
+      font-size: 14px;
+      line-height:1.35;
+    }
+    h3 {
+      margin-bottom: 10px;
+      font-size: 20px;
+      color: #34495e;
+    }
+    button {
+      margin-top: 20px;
+      padding: 12px 25px;
+      font-size: 16px;
+      font-weight: 600;
+      background-color: #3498db;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    button:hover { background-color: #2980b9; }
+    #counter, #fileCounter { margin-top: 14px; font-size: 18px; font-weight: bold; }
+    #fileCounter{ font-size: 16px; font-weight: 600; color:#445; }
+    .progress-bar-container {
+      width: 100%;
+      background: #ddd;
+      height: 20px;
+      border-radius: 10px;
+      margin-top: 10px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(to right, #4caf50, #81c784);
+      border-radius: 10px 0 0 10px;
+      transition: width 0.5s;
+    }
+    .small-note{
+      font-size: 12px;
+      color:#667;
+      margin-top: 8px;
+    }
+    .radio-group{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:10px;
+    }
+    .radio-pill{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      border:1px solid #d9e3f0;
+      background:#f3f7fd;
+      padding:10px 12px;
+      border-radius: 999px;
+      cursor:pointer;
+      user-select:none;
+      font-size:14px;
+    }
+    .radio-pill input{ transform: scale(1.1); }
+    .hidden{ display:none; }
+    .chip{
+      display:inline-block;
+      padding:3px 10px;
+      border-radius:999px;
+      background:#eef4fb;
+      border:1px solid #d9e3f0;
+      font-size:12px;
+      color:#345;
+      margin-left:8px;
+    }
+  </style>
+</head>
+<body>
+<h1>Caricamento Documenti ISEE 2026</h1>
+<div class="subtitle">
+  Basato sull’elenco documenti ISEE 2026. Carica foto/PDF, poi scarica gli archivi ZIP (uno per sezione).<br>
+  <b>Nota:</b> l’elenco potrebbe non essere esaustivo e in alcuni casi può essere richiesta ulteriore documentazione.
+</div>
+
+<form id="uploadForm">
+
+  <div class="section" id="section0">
+    <h3>0. Tipologia ISEE (facoltativo)</h3>
+    <div class="small-note">Seleziona il tipo di ISEE: servirà solo per mostrarti eventuali documenti aggiuntivi (se richiesti).</div>
+    <div class="radio-group" id="iseeTypeGroup">
+      <label class="radio-pill"><input type="radio" name="isee_type" value="ordinario"> Ordinario</label>
+      <label class="radio-pill"><input type="radio" name="isee_type" value="universitario"> Universitario</label>
+      <label class="radio-pill"><input type="radio" name="isee_type" value="minorenni"> Minorenni</label>
+      <label class="radio-pill"><input type="radio" name="isee_type" value="socio_sanitario_res"> Socio-sanitario residenziale</label>
+      <label class="radio-pill"><input type="radio" name="isee_type" value="socio_sanitario"> Socio-sanitario</label>
+    </div>
+
+    <div id="extraDocsWrap" class="hidden" style="margin-top:12px;">
+      <div class="small-note"><b>Documenti aggiuntivi (se richiesti):</b></div>
+      <div class="item">Protocollo ISEE del nucleo d'origine (Universitario, se non indipendente): <input type="file" name="0_prot_isee_nucleo_origine" multiple></div>
+      <div class="item">Documenti/dati altro genitore (Minorenni, se richiesto): <input type="file" name="0_doc_altro_genitore" multiple></div>
+      <div class="item">Protocollo ISEE di eventuali figli non conviventi (Socio-sanitario residenziale, se richiesto): <input type="file" name="0_prot_isee_figli_nonconv" multiple></div>
+      <div class="item">Altro (documenti aggiuntivi): <input type="file" name="0_altro" multiple></div>
+    </div>
+  </div>
+
+  <div class="section" id="section1">
+    <h3>1. Dati anagrafici <span class="chip">alla data di compilazione DSU</span></h3>
+    <div class="item">Documento di identità valido del dichiarante: <input type="file" name="1_documento_identita_dichiarante" multiple></div>
+    <div class="item">Dati anagrafici e codici fiscali di tutti i componenti + figli fiscalmente a carico (compreso eventuale coniuge AIRE): <input type="file" name="1_dati_anagrafici_codici_fiscali" multiple></div>
+    <div class="item">Email e numeri di cellulare dei componenti del nucleo: <input type="file" name="1_contatti_email_cell" multiple></div>
+    <div class="item">Certificazioni attestanti il grado di invalidità (verbale), se presenti: <input type="file" name="1_invalidita" multiple></div>
+    <div class="item">Contratto di locazione registrato (o fattura canone per edilizia popolare/cooperativa), se in affitto: <input type="file" name="1_contratto_locazione" multiple></div>
+    <div class="item">Precedente attestazione ISEE 2026, se disponibile: <input type="file" name="1_attestazione_isee_precedente" multiple></div>
+    <div class="item">Altro: <input type="file" name="1_altro" multiple></div>
+  </div>
+
+  <div class="section" id="section2">
+    <h3>2. Patrimonio mobiliare 2024 <span class="chip">anche all’estero</span></h3>
+    <div class="item">Conti correnti e libretti (anche chiusi/aperti nel 2024): saldo 31/12/2024 + giacenza media 2024 + IBAN + CF intermediario: <input type="file" name="2_conti_correnti_libretti" multiple></div>
+    <div class="item">Carte prepagate: saldo 31/12/2024 + giacenza media 2024 + IBAN (se presente) + CF intermediario: <input type="file" name="2_carte_prepagate" multiple></div>
+    <div class="item">Titoli (Stato, obbligazioni, certificati deposito/credito, buoni fruttiferi, ecc.): valore nominale al 31/12/2024 + CF intermediario: <input type="file" name="2_titoli" multiple></div>
+    <div class="item">Polizze/assicurazioni con finalità finanziaria o riscattabili: premi versati fino al 31/12/2024 (al netto riscatti) + CF operatore: <input type="file" name="2_polizze_finanziarie" multiple></div>
+    <div class="item">Azioni/quote OICR (fondi): prospetto al 31/12/2024 con valore: <input type="file" name="2_oicr" multiple></div>
+    <div class="item">Partecipazioni non qualificate in società quotate: valore al 31/12/2024 (o giorno antecedente più prossimo): <input type="file" name="2_partecipazioni_quotate" multiple></div>
+    <div class="item">Partecipazioni/impresa individuale: ultimo bilancio o certificazione valore patrimonio netto (vedi Allegato A, se richiesto): <input type="file" name="2_partecipazioni_non_quotate_impresa" multiple></div>
+    <div class="item">Altro: <input type="file" name="2_altro" multiple></div>
+  </div>
+
+  <div class="section" id="section3">
+    <h3>3. Patrimonio immobiliare <span class="chip">al 31/12/2024 • anche all’estero</span></h3>
+    <div class="item">Visure catastali/atti (compravendita, successione, donazione) per terreni e fabbricati: <input type="file" name="3_visure_atti" multiple></div>
+    <div class="item">Valore venale in comune commercio dei terreni edificabili, se presenti: <input type="file" name="3_terreni_edificabili" multiple></div>
+    <div class="item">Certificazione mutui: quota capitale residuo al 31/12/2024 (acquisto/costruzione immobili): <input type="file" name="3_mutui_quota_residua" multiple></div>
+    <div class="item">Altro: <input type="file" name="3_altro" multiple></div>
+  </div>
+
+  <div class="section" id="section4">
+    <h3>4. Dati reddituali <span class="chip">anno d’imposta 2024</span></h3>
+    <div class="item">Dichiarazione dei redditi (Modello 730/2025 o Redditi PF 2025): <input type="file" name="4_dichiarazione_redditi" multiple></div>
+    <div class="item">Certificazione Unica (CU 2025): <input type="file" name="4_cu_2025" multiple></div>
+    <div class="item">Altri redditi/indennità (borse di studio, assegni, sussidi, assegni natalità, contributo affitto, ecc.): <input type="file" name="4_altri_redditi_indennita" multiple></div>
+    <div class="item">Redditi da lavoro dipendente prestato all'estero, se presenti: <input type="file" name="4_redditi_estero" multiple></div>
+    <div class="item">Pensioni estere, se presenti: <input type="file" name="4_pensioni_estere" multiple></div>
+    <div class="item">Modello IRAP 2025 per proventi da attività agricole, se presente: <input type="file" name="4_irap_2025_agricola" multiple></div>
+    <div class="item">Reddito lordo dichiarato nel paese di residenza per eventuale coniuge iscritto AIRE, se presente: <input type="file" name="4_reddito_aire" multiple></div>
+    <div class="item">Altro: <input type="file" name="4_altro" multiple></div>
+  </div>
+
+  <div class="section" id="section5">
+    <h3>5. Veicoli e beni durevoli</h3>
+    <div class="item">Targhe autoveicoli, motoveicoli ≥ 500cc, navi/imbarcazioni da diporto (alla data DSU): <input type="file" name="5_targhe_veicoli" multiple></div>
+    <div class="item">Altro: <input type="file" name="5_altro" multiple></div>
+  </div>
+</form>
+
+<div id="counter">Sezioni completate: 0 / 6</div>
+<div id="fileCounter">File caricati: 0</div>
+<div class="progress-bar-container">
+  <div id="progressBar" class="progress-bar"></div>
+</div>
+
+<button onclick="downloadAllZips()">Scarica Archivi ZIP</button>
+<button id="installButton" style="display:none; margin-top:20px; background-color:#27ae60;">Installa App</button>
+
+<div id="downloadProgress" style="display:none; margin-top:10px;">
+  <p>Preparazione archivi in corso...</p>
+  <div class="progress-bar-container">
+    <div id="progressBarDownload" class="progress-bar"></div>
+  </div>
+</div>
+
+<script>
+const allowedExtensions = ['bmp', 'doc', 'docx', 'jpeg', 'jpg', 'mov', 'mp4', 'mpeg', 'odt', 'pdf', 'png', 'rtf', 'tif', 'tiff', 'txt', 'zip'];
+const maxFileSize = 25 * 1024 * 1024; // 25MB (personalizzabile)
+const maxFilenameLength = 120;
+
+document.querySelectorAll('input[type="file"]').forEach(input => { input.setAttribute('accept', '*/*'); });
+
+function validateFiles(input) {
+  for (const file of input.files) {
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (!allowedExtensions.includes(ext)) {
+      alert(`Formato file non consentito: ${file.name}`);
+      input.value = '';
+      return;
+    }
+    if (file.size > maxFileSize) {
+      alert(`File troppo grande: ${file.name} (max ${Math.round(maxFileSize/1024/1024)}MB)`);
+      input.value = '';
+      return;
+    }
+    if (file.name.length > maxFilenameLength) {
+      alert(`Il nome del file è troppo lungo: ${file.name}`);
+      input.value = '';
+      return;
+    }
+  }
+}
+
+function updateCounter() {
+  const form = document.getElementById('uploadForm');
+  const sections = form.querySelectorAll('.section');
+  let completedSections = 0;
+  let totalFiles = 0;
+
+  sections.forEach(section => {
+    const inputs = section.querySelectorAll('input[type="file"]');
+    let hasFiles = false;
+
+    inputs.forEach(input => {
+      if (input.files.length > 0) {
+        hasFiles = true;
+        totalFiles += input.files.length;
+      }
+    });
+
+    if (hasFiles) completedSections++;
+  });
+
+  const total = sections.length;
+  document.getElementById('counter').innerText = `Sezioni completate: ${completedSections} / ${total}`;
+  document.getElementById('progressBar').style.width = (completedSections / total) * 100 + '%';
+  document.getElementById('fileCounter').innerText = `File caricati: ${totalFiles}`;
+}
+
+document.querySelectorAll('input[type="file"]').forEach(input => {
+  input.addEventListener('change', function() {
+    validateFiles(this);
+    updateCounter();
+  });
+});
+
+function sanitizeName(name){
+  return name.trim().replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_+|_+$/g,'');
+}
+
+function downloadAllZips() {
+  const form = document.getElementById('uploadForm');
+  const sections = form.querySelectorAll('.section');
+  const maxZipSize = 5 * 1024 * 1024; // 5MB per zip (come nella tua app 730)
+
+  document.getElementById('downloadProgress').style.display = 'block';
+  document.getElementById('progressBarDownload').style.width = '0%';
+
+  let totalSections = sections.length;
+  let processedSections = 0;
+
+  sections.forEach(section => {
+    const inputs = section.querySelectorAll('input[type="file"]');
+    let files = [];
+
+    inputs.forEach(input => {
+      Array.from(input.files).forEach(file => { files.push(file); });
+    });
+
+    if (files.length > 0) {
+      let currentZip = new JSZip();
+      let currentSize = 0;
+      let zipIndex = 1;
+      const sectionName = sanitizeName(section.querySelector('h3').innerText);
+
+      files.forEach((file) => {
+        if (currentSize + file.size > maxZipSize) {
+          currentZip.generateAsync({type: "blob"}).then(content => {
+            saveAs(content, `${sectionName}_${zipIndex}.zip`);
+          });
+          currentZip = new JSZip();
+          currentSize = 0;
+          zipIndex++;
+        }
+        currentZip.file(file.name, file);
+        currentSize += file.size;
+      });
+
+      if (currentSize > 0) {
+        currentZip.generateAsync({type: "blob"}).then(content => {
+          saveAs(content, `${sectionName}_${zipIndex}.zip`);
+        });
+      }
+    }
+
+    processedSections++;
+    document.getElementById('progressBarDownload').style.width = (processedSections / totalSections) * 100 + '%';
+  });
+
+  setTimeout(() => {
+    document.getElementById('downloadProgress').style.display = 'none';
+  }, 1000);
+}
+
+// Show extra docs when a type is selected (still optional)
+const extraWrap = document.getElementById('extraDocsWrap');
+document.querySelectorAll('input[name="isee_type"]').forEach(r => {
+  r.addEventListener('change', () => {
+    // show extra area for all, since "Altro" exists; but highlight main three use-cases
+    extraWrap.classList.remove('hidden');
+  });
+});
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('service-worker.js').then(function(registration) {
+      console.log('ServiceWorker registrato con successo:', registration.scope);
+    }, function(err) {
+      console.log('Registrazione ServiceWorker fallita:', err);
+    });
+  });
+}
+
+let deferredPrompt;
+const installButton = document.getElementById('installButton');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  installButton.style.display = 'block';
+
+  installButton.addEventListener('click', () => {
+    installButton.style.display = 'none';
+    deferredPrompt.prompt();
+
+    deferredPrompt.userChoice.then((choiceResult) => {
+      deferredPrompt = null;
+    });
+  });
+});
+</script>
+</body>
+</html>
